@@ -1,4 +1,4 @@
-import router from './router'
+﻿import router from './router'
 
 require('./counter')
 require('./account')
@@ -8,5 +8,6 @@ require('./mock')
 require('./analytics')
 require('./foreign')
 require('./postman')
+// require('./record')
 
 export default router
