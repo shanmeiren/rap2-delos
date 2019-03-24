@@ -1,0 +1,380 @@
+---
+rap2: "1.0"
+
+info:
+  description: repo
+  title: repo API
+  version: 0.0.0-alpha
+schemes:
+  - http
+servers:
+  - url: 'http://localhost:8080'
+paths:
+  '/repository/create':
+    post:
+      summary: get all books.
+      description: Get All Books.
+      parameters:
+        - name: book_id
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: Id of the book
+      tags:
+        - Books
+      responses:
+        '200':
+          description: Books retrieved.
+          content:
+            application/json:
+            {
+              "data": {
+                "id": 163131,
+                "name": "api",
+                "description": "api desc",
+                "logo": null,
+                "visibility": true,
+                "ownerId": 102888,
+                "organizationId": null,
+                "creatorId": 102888,
+                "lockerId": null,
+                "createdAt": "2019-03-24T06:21:12.000Z",
+                "updatedAt": "2019-03-24T06:21:12.000Z",
+                "deletedAt": null,
+                "creator": {
+                  "id": 102888,
+                  "fullname": "shanmeiren",
+                  "email": "445279921@qq.com"
+                },
+                "owner": {
+                  "id": 102888,
+                  "fullname": "shanmeiren",
+                  "email": "445279921@qq.com"
+                },
+                "locker": null,
+                "members": [],
+                "organization": null,
+                "modules": [
+                  {
+                    "id": 239569,
+                    "name": "示例模块",
+                    "description": "示例模块",
+                    "priority": 1,
+                    "creatorId": 102888,
+                    "repositoryId": 163131,
+                    "createdAt": "2019-03-24T06:21:12.000Z",
+                    "updatedAt": "2019-03-24T06:21:12.000Z",
+                    "deletedAt": null,
+                    "interfaces": [
+                      {
+                        "id": 888849,
+                        "name": "示例接口",
+                        "url": "/example/1553408472841",
+                        "method": "GET",
+                        "description": "示例接口描述",
+                        "priority": 1,
+                        "status": 200,
+                        "creatorId": 102888,
+                        "lockerId": null,
+                        "moduleId": 239569,
+                        "repositoryId": 163131,
+                        "createdAt": "2019-03-24T06:21:12.000Z",
+                        "updatedAt": "2019-03-24T06:21:12.000Z",
+                        "deletedAt": null,
+                        "locker": null,
+                        "properties": [
+                          {
+                            "id": 8653456,
+                            "scope": "request",
+                            "type": "String",
+                            "pos": 2,
+                            "name": "foo",
+                            "rule": "",
+                            "value": "@ctitle",
+                            "description": "请求属性示例",
+                            "parentId": -1,
+                            "priority": 1,
+                            "interfaceId": 888849,
+                            "creatorId": 102888,
+                            "moduleId": 239569,
+                            "repositoryId": 163131,
+                            "required": false,
+                            "createdAt": "2019-03-24T06:21:12.000Z",
+                            "updatedAt": "2019-03-24T06:21:12.000Z",
+                            "deletedAt": null
+                          },
+                          {
+                            "id": 8653457,
+                            "scope": "response",
+                            "type": "String",
+                            "pos": 2,
+                            "name": "string",
+                            "rule": "1-10",
+                            "value": "★",
+                            "description": "字符串属性示例",
+                            "parentId": -1,
+                            "priority": 1,
+                            "interfaceId": 888849,
+                            "creatorId": 102888,
+                            "moduleId": 239569,
+                            "repositoryId": 163131,
+                            "required": false,
+                            "createdAt": "2019-03-24T06:21:12.000Z",
+                            "updatedAt": "2019-03-24T06:21:12.000Z",
+                            "deletedAt": null
+                          },
+                          {
+                            "id": 8653458,
+                            "scope": "response",
+                            "type": "Number",
+                            "pos": 2,
+                            "name": "number",
+                            "rule": "1-100",
+                            "value": "1",
+                            "description": "数字属性示例",
+                            "parentId": -1,
+                            "priority": 1,
+                            "interfaceId": 888849,
+                            "creatorId": 102888,
+                            "moduleId": 239569,
+                            "repositoryId": 163131,
+                            "required": false,
+                            "createdAt": "2019-03-24T06:21:12.000Z",
+                            "updatedAt": "2019-03-24T06:21:12.000Z",
+                            "deletedAt": null
+                          },
+                          {
+                            "id": 8653459,
+                            "scope": "response",
+                            "type": "Boolean",
+                            "pos": 2,
+                            "name": "boolean",
+                            "rule": "1-2",
+                            "value": "true",
+                            "description": "布尔属性示例",
+                            "parentId": -1,
+                            "priority": 1,
+                            "interfaceId": 888849,
+                            "creatorId": 102888,
+                            "moduleId": 239569,
+                            "repositoryId": 163131,
+                            "required": false,
+                            "createdAt": "2019-03-24T06:21:12.000Z",
+                            "updatedAt": "2019-03-24T06:21:12.000Z",
+                            "deletedAt": null
+                          },
+                          {
+                            "id": 8653460,
+                            "scope": "response",
+                            "type": "RegExp",
+                            "pos": 2,
+                            "name": "regexp",
+                            "rule": "",
+                            "value": "/[a-z][A-Z][0-9]/",
+                            "description": "正则属性示例",
+                            "parentId": -1,
+                            "priority": 1,
+                            "interfaceId": 888849,
+                            "creatorId": 102888,
+                            "moduleId": 239569,
+                            "repositoryId": 163131,
+                            "required": false,
+                            "createdAt": "2019-03-24T06:21:12.000Z",
+                            "updatedAt": "2019-03-24T06:21:12.000Z",
+                            "deletedAt": null
+                          },
+                          {
+                            "id": 8653461,
+                            "scope": "response",
+                            "type": "Function",
+                            "pos": 2,
+                            "name": "function",
+                            "rule": "",
+                            "value": "() => Math.random()",
+                            "description": "函数属性示例",
+                            "parentId": -1,
+                            "priority": 1,
+                            "interfaceId": 888849,
+                            "creatorId": 102888,
+                            "moduleId": 239569,
+                            "repositoryId": 163131,
+                            "required": false,
+                            "createdAt": "2019-03-24T06:21:12.000Z",
+                            "updatedAt": "2019-03-24T06:21:12.000Z",
+                            "deletedAt": null
+                          },
+                          {
+                            "id": 8653462,
+                            "scope": "response",
+                            "type": "Array",
+                            "pos": 2,
+                            "name": "array",
+                            "rule": "1-10",
+                            "value": "",
+                            "description": "数组属性示例",
+                            "parentId": -1,
+                            "priority": 1,
+                            "interfaceId": 888849,
+                            "creatorId": 102888,
+                            "moduleId": 239569,
+                            "repositoryId": 163131,
+                            "required": false,
+                            "createdAt": "2019-03-24T06:21:12.000Z",
+                            "updatedAt": "2019-03-24T06:21:12.000Z",
+                            "deletedAt": null
+                          },
+                          {
+                            "id": 8653463,
+                            "scope": "response",
+                            "type": "Number",
+                            "pos": 2,
+                            "name": "foo",
+                            "rule": "+1",
+                            "value": "1",
+                            "description": "数组元素示例",
+                            "parentId": 8653462,
+                            "priority": 1,
+                            "interfaceId": 888849,
+                            "creatorId": 102888,
+                            "moduleId": 239569,
+                            "repositoryId": 163131,
+                            "required": false,
+                            "createdAt": "2019-03-24T06:21:12.000Z",
+                            "updatedAt": "2019-03-24T06:21:12.000Z",
+                            "deletedAt": null
+                          },
+                          {
+                            "id": 8653464,
+                            "scope": "response",
+                            "type": "String",
+                            "pos": 2,
+                            "name": "bar",
+                            "rule": "1-10",
+                            "value": "★",
+                            "description": "数组元素示例",
+                            "parentId": 8653462,
+                            "priority": 1,
+                            "interfaceId": 888849,
+                            "creatorId": 102888,
+                            "moduleId": 239569,
+                            "repositoryId": 163131,
+                            "required": false,
+                            "createdAt": "2019-03-24T06:21:12.000Z",
+                            "updatedAt": "2019-03-24T06:21:12.000Z",
+                            "deletedAt": null
+                          },
+                          {
+                            "id": 8653465,
+                            "scope": "response",
+                            "type": "Array",
+                            "pos": 2,
+                            "name": "items",
+                            "rule": "",
+                            "value": "[1, true, 'hello', /\\w{10}/]",
+                            "description": "自定义数组元素示例",
+                            "parentId": -1,
+                            "priority": 1,
+                            "interfaceId": 888849,
+                            "creatorId": 102888,
+                            "moduleId": 239569,
+                            "repositoryId": 163131,
+                            "required": false,
+                            "createdAt": "2019-03-24T06:21:12.000Z",
+                            "updatedAt": "2019-03-24T06:21:12.000Z",
+                            "deletedAt": null
+                          },
+                          {
+                            "id": 8653466,
+                            "scope": "response",
+                            "type": "Object",
+                            "pos": 2,
+                            "name": "object",
+                            "rule": "",
+                            "value": "",
+                            "description": "对象属性示例",
+                            "parentId": -1,
+                            "priority": 1,
+                            "interfaceId": 888849,
+                            "creatorId": 102888,
+                            "moduleId": 239569,
+                            "repositoryId": 163131,
+                            "required": false,
+                            "createdAt": "2019-03-24T06:21:12.000Z",
+                            "updatedAt": "2019-03-24T06:21:12.000Z",
+                            "deletedAt": null
+                          },
+                          {
+                            "id": 8653467,
+                            "scope": "response",
+                            "type": "Number",
+                            "pos": 2,
+                            "name": "foo",
+                            "rule": "+1",
+                            "value": "1",
+                            "description": "对象属性示例",
+                            "parentId": 8653466,
+                            "priority": 1,
+                            "interfaceId": 888849,
+                            "creatorId": 102888,
+                            "moduleId": 239569,
+                            "repositoryId": 163131,
+                            "required": false,
+                            "createdAt": "2019-03-24T06:21:12.000Z",
+                            "updatedAt": "2019-03-24T06:21:12.000Z",
+                            "deletedAt": null
+                          },
+                          {
+                            "id": 8653468,
+                            "scope": "response",
+                            "type": "String",
+                            "pos": 2,
+                            "name": "bar",
+                            "rule": "1-10",
+                            "value": "★",
+                            "description": "对象属性示例",
+                            "parentId": 8653466,
+                            "priority": 1,
+                            "interfaceId": 888849,
+                            "creatorId": 102888,
+                            "moduleId": 239569,
+                            "repositoryId": 163131,
+                            "required": false,
+                            "createdAt": "2019-03-24T06:21:12.000Z",
+                            "updatedAt": "2019-03-24T06:21:12.000Z",
+                            "deletedAt": null
+                          },
+                          {
+                            "id": 8653469,
+                            "scope": "response",
+                            "type": "String",
+                            "pos": 2,
+                            "name": "placeholder",
+                            "rule": "",
+                            "value": "@title",
+                            "description": "占位符示例",
+                            "parentId": -1,
+                            "priority": 1,
+                            "interfaceId": 888849,
+                            "creatorId": 102888,
+                            "moduleId": 239569,
+                            "repositoryId": 163131,
+                            "required": false,
+                            "createdAt": "2019-03-24T06:21:12.000Z",
+                            "updatedAt": "2019-03-24T06:21:12.000Z",
+                            "deletedAt": null
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "collaborators": []
+              }
+            }
+      requestBody:
+        content:
+          application/json:
+          {"name":"api","description":"api desc","members":[],"organizationId":null,"collaboratorIds":[],"memberIds":[]}
+
+

@@ -11,10 +11,10 @@ let config: IConfigOptions = {
   },
   db: {
     dialect: 'mysql',
-    host: 'localhost',
+    host: process.env.MYSQL_URL || 'localhost',
     port: 3306,
     username: 'root',
-    password: '',
+    password: '123456',
     database: 'RAP2_DELOS_APP',
     pool: {
       max: 5,
@@ -23,7 +23,9 @@ let config: IConfigOptions = {
     },
     logging: false,
   },
-  redis: {},
+  redis: {
+    host: process.env.REDIS_URL || 'localhost'
+  },
   mail: {
     host: 'smtp-mail.outlook.com',
     port: 587,

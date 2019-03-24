@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "rap2-delos",
   "version": "1.0.0",
   "repository": {
@@ -10,7 +10,8 @@
     "build": "rimraf -rf dist/ && tsc",
     "test": "cross-env NODE_ENV=development cross-env TEST_MODE=true nyc mocha --exit",
     "check": "echo \"Checking...\" && tsc && npm run tslint",
-    "dev": "cross-env NODE_ENV=development nodemon --watch scripts --watch dist dist/scripts/dev.js",
+    "dev": "cross-env MYSQL_URL=192.168.0.101 REDIS_URL=192.168.0.101 NODE_ENV=development nodemon --watch scripts --watch dist dist/scripts/dev.js",
+    "devd": "cross-env MYSQL_URL=192.168.0.101 REDIS_URL=192.168.0.101 NODE_ENV=development node dist/scripts/dev.js",
     "create-db": "cross-env NODE_ENV=development node dist/scripts/init",
     "tslint": "tslint -c tslint.json -p tsconfig.json",
     "start": "cross-env NODE_ENV=production pm2 start dist/dispatch.js --name=rap-server-delos",
@@ -87,11 +88,13 @@
     "nyc": "^12.0.2",
     "pm2": "^2.10.2",
     "pre-commit": "^1.2.2",
+    "query-string": "^6.4.0",
     "rimraf": "^2.6.2",
     "source-map-support": "^0.5.0",
     "standard": "^11.0.1",
     "supertest": "^3.0.0",
     "tslint": "^5.8.0",
-    "typescript": "^2.9.2"
+    "typescript": "^2.9.2",
+    "zlib": "^1.0.5"
   }
 }

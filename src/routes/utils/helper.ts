@@ -1,17 +1,18 @@
 import { Module, Interface, Property } from '../../models'
 import { Repository } from '../../models'
-
+import {CONSTANTS} from '../../constant';
+console.log('xx',CONSTANTS);
 const genExampleModule = (extra: any) => Object.assign({
-  name: '示例模块',
-  description: '示例模块',
+  name: CONSTANTS.DEFAULT_MODULE,
+  description: CONSTANTS.DEFAULT_MODULE_DESC,
   creatorId: undefined,
   repositoryId: undefined,
 }, extra)
 const genExampleInterface = (extra: any) => Object.assign({
-  name: '示例接口',
+  name: CONSTANTS.DEFAULT_INTERFACE,
   url: `/example/${Date.now()}`,
   method: 'GET',
-  description: '示例接口描述',
+  description: CONSTANTS.DEFAULT_INTERFACE_DESC,
   creatorId: undefined,
   lockerId: undefined,
   moduleId: undefined,

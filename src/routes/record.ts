@@ -1,156 +1,213 @@
 import router from './router'
-import { Repository, Interface, Property } from '../models'
-import { QueryInclude } from '../models';
-import Tree from './utils/tree'
-import urlUtils from './utils/url'
-import * as querystring from 'querystring'
-import { Sequelize } from 'sequelize-typescript';
+import * as k2c from 'koa2-connect'
+import * as httpProxy from 'http-proxy-middleware'
+import * as queryString from 'query-string'
+import { User, Organization, Repository, Module, Interface, Property, QueryInclude, Logger } from '../models'
+const { initRepository, initModule,genExampleModule, genExampleInterface} = require('./utils/helper')
+const proxyConfig:any={
+    target: 'https://www.sde4-c.uk.hsbcnet.com', // target host
+    changeOrigin: true, // needed for virtual hosted sites
+    onProxyRes:(proxyRes:any,req:any,res:any)=>{
+        const _end =res.end;
+        const originalHeaders = proxyRes.headers;
+        const httpStatusCode = proxyRes.statusCode;
+        const {mockReq} = req;
+        let body='';
+        proxyRes.on('data', function (chunk) {
+            chunk = chunk.toString('utf-8');
+            body += chunk;
+        });
+        res.write =()=>{};
 
-const attributes: any = { exclude: [] }
-const pt = require('node-print').pt
-const beautify = require('js-beautify').js_beautify
-const Op = Sequelize.Op
+        res.end =(...endArgs:[])=>{
+            //Append original headers
+            Object.keys(originalHeaders).forEach((key)=>{
+               if(key.indexOf('encoding') ===-1 && key.indexOf('connection') === -1){
+                   res.setHeader(key, originalHeaders[key]);
+               }
+            });
 
-router.use
+            let qs = queryString.parseUrl(req.url);
+            console.log('query string', qs.query);
 
-// /app/mock/:repository/:method/:url
-// X DONE 2.2 支持 GET POST PUT DELETE 请求
-// DONE 2.2 忽略请求地址中的前缀斜杠
-// DONE 2.3 支持所有类型的请求，这样从浏览器中发送跨越请求时不需要修改 method
-router.all('/app/mock/:repositoryId(\\d+)/:url(.+)', async (ctx) => {
-  let app: any = ctx.app
-  app.counter.mock++
-  let { repositoryId, url } = ctx.params
-  let method = ctx.request.method
-  repositoryId = +repositoryId
-  if (REG_URL_METHOD.test(url)) {
-    REG_URL_METHOD.lastIndex = -1
-    method = REG_URL_METHOD.exec(url)[1].toUpperCase()
-    REG_URL_METHOD.lastIndex = -1
-    url = url.replace(REG_URL_METHOD, '')
-  }
+            //Patch GET/POST parameters
+            let reqData={
+                url:qs.url,
+                params:qs.query
+            };
 
-  let urlWithoutPrefixSlash = /(\/)?(.*)/.exec(url)[2]
-  // let urlWithoutSearch
-  // try {
-  // let urlParts = new URL(url)
-  // urlWithoutSearch = `${urlParts.origin}${urlParts.pathname}`
-  // } catch (e) {
-  // urlWithoutSearch = url
-  // }
-  // DONE 2.3 腐烂的 KISSY
-  // KISSY 1.3.2 会把路径中的 // 替换为 /。在浏览器端拦截跨域请求时，需要 encodeURIComponent(url) 以防止 http:// 被替换为 http:/。但是同时也会把参数一起编码，导致 route 的 url 部分包含了参数。
-  // 所以这里重新解析一遍！！！
+            if(req.method !== "GET"){
+                //read body
+                // let qs = queryString(req.url);
+                // console.log('get req', qs);
+                Object.assign(req.params,req.body);
+            }
 
-  let repository = await Repository.findById(repositoryId)
-  let collaborators: Repository[] = (await repository.$get('collaborators')) as Repository[]
-  let itf
+            console.log('resp',body);
 
-  const matchedItfList = await Interface.findAll({
-    attributes,
-    where: {
-      repositoryId: [repositoryId, ...collaborators.map(item => item.id)],
-      method,
-      url: {
-        [Op.like]: `%${urlWithoutPrefixSlash}%`,
-      }
+            if(body.length){
+                _end.apply(res, [body]);
+            }else{
+                _end.apply(res, endArgs);
+            }
+
+            //Post response action start
+            let utils:SqlUtils = new SqlUtils();
+            let createApiData ={
+                repo:{
+                    creatorId:req.creatorId,
+                    ownerId:req.creatorId,
+                    name:mockReq.repoName,
+                    description:'api desc',
+                    members:[],
+                    organizationId:null,
+                    collaboratorIds:[],
+                    memberIds:[]
+                },
+                module:{},
+                interfaceObj:{
+                    url:mockReq.url,
+                    params:mockReq.params,
+                    method:req.method,
+                    status:httpStatusCode,
+                    description: req.url,
+                    resp:body
+                }
+            };
+            utils.createInterface(createApiData);
+        };
+        proxyRes.on('end',()=>{
+            console.log('returning to client...');
+            res.end(body);
+        });
+    },
+    selfHandleResponse:true,
+    pathRewrite: (path, req)=>{
+        return path.replace(/\/record\/(.*)\/(uims|dtc)\/(.*)/,'/$2/$3')
     }
-  })
-
-  if (matchedItfList) {
-    for (const item of matchedItfList) {
-      itf = item
-      let url = item.url
-      if (url.charAt(0) === '/') {
-        url = url.substring(1)
-      }
-      if (url === urlWithoutPrefixSlash) {
-        break
-      }
+}
+router.all('/record/:dataset/:url(.+)', async (ctx, next) => {
+    ctx.respond = false
+    let creatorId = ctx.session.id;
+    ctx.req.body = ctx.request.body;
+    ctx.req.creatorId = creatorId;
+    let mockParams;
+    if(ctx.method === "GET"){
+        mockParams = ctx.query;
+    }else{
+        if(ctx.get('Content-Type') === 'application/x-www-form-urlencoded'){
+            mockParams = {...ctx.query, ...ctx.request.body}
+        }else if(ctx.get('Content-Type') === 'application/json'){
+            mockParams = JSON.stringify(ctx.request.body);
+        }else{
+            mockParams = ctx.request.body;
+        }
     }
-  }
+    ctx.req.mockReq={
+      repoName:ctx.params['dataset'],
+      params:mockParams,
+      url:ctx.params['url'].substr(0,ctx.params['url'].indexOf(';jsessionid'))
+    };
 
-  if (!itf) {
-    // try RESTFul API search...
-    let list = await Interface.findAll({
-      attributes: ['id', 'url', 'method'],
-      where: {
-        repositoryId: [repositoryId, ...collaborators.map(item => item.id)],
-        method,
-      }
-    })
-
-    let listMatched = []
-    for (let item of list) {
-      if (urlUtils.urlMatchesPattern(url, item.url)) {
-        listMatched.push(item)
-      }
-    }
-
-    if (listMatched.length > 1) {
-      ctx.body = { isOk: false, errMsg: '匹配到多个接口，请修改规则确保接口规则唯一性。 Matched multiple interfaces, please ensure pattern to be unique.' }
-      return
-    } else if (listMatched.length === 0) {
-      ctx.body = { isOk: false, errMsg: '未匹配到任何接口 No matched interface' }
-      return
-    } else {
-      itf = await Interface.findById(listMatched[0].id)
-    }
-  }
-
-  let interfaceId = itf.id
-  let properties = await Property.findAll({
-    attributes,
-    where: { interfaceId, scope: 'response' },
-  })
-  // check required
-  if (~['GET', 'POST'].indexOf(method)) {
-    let requiredProperties = await Property.findAll({
-      attributes,
-      where: { interfaceId, scope: 'request', required: true },
-    })
-    let passed = true
-    let pFailed: Property | undefined
-    let params = method === 'GET' ? ctx.request.query : ctx.request.body
-    for (const p of requiredProperties) {
-      if (typeof params[p.name] === 'undefined') {
-        passed = false
-        pFailed = p
-        break
-      }
-    }
-    if (!passed) {
-      ctx.body = {
-        isOk: false,
-        errMsg: `必选参数${pFailed.name}未传值。 Required parameter ${pFailed.name} has no value.`,
-      }
-      ctx.status = 500
-      return
-    }
-  }
-
-  properties = properties.map(item => item.toJSON())
-
-  // DONE 2.2 支持引用请求参数
-  let requestProperties = await Property.findAll({
-    attributes,
-    where: { interfaceId, scope: 'request' },
-  })
-  requestProperties = requestProperties.map(item => item.toJSON())
-  let requestData = Tree.ArrayToTreeToTemplateToData(requestProperties)
-  Object.assign(requestData, ctx.query)
-  const data = Tree.ArrayToTreeToTemplateToData(properties, requestData)
-  ctx.type = 'json'
-  ctx.body = JSON.stringify(data, undefined, 2)
-  if (itf && itf.url.indexOf('[callback]=') > -1) {
-    const query = querystring.parse(itf.url.substring(itf.url.indexOf('?') + 1))
-    const cbName = query['[callback]']
-    const cbVal = ctx.request.query[`${cbName}`]
-    if (cbVal) {
-      let body = typeof ctx.body === 'object' ? JSON.stringify(ctx.body, undefined, 2) : ctx.body
-      ctx.type = 'application/x-javascript'
-      ctx.body = cbVal + '(' + body + ')'
-    }
-  }
+    await k2c(httpProxy(proxyConfig))(ctx, next);
+    await next()
 })
 
+function transformApiName(req){
+    if(req.params["resourceName"]){
+        return req.params['resourceName'];
+    }
+    return req.url;
+}
+
+class SqlUtils{
+    transformApiName(req){
+        if(req.params["resourceName"]){
+            return req.params['resourceName'];
+        }
+        return req.url;
+    }
+    async createInterface(data){
+        console.log('creating interface',data);
+
+        //Repo & module
+        let repo,mod, interf;
+        repo = await Repository.findOne({
+            where: {name: data.repo.name, creatorId: data.repo.creatorId}
+        });
+        console.log('repo from db',repo);
+
+        if(repo == null){
+            //create a new one
+            console.log('no repo found, create new');
+            repo = await Repository.create(data.repo);
+            mod = await Module.create(genExampleModule({
+                creatorId: repo.creatorId,
+                repositoryId: repo.id,
+            }));
+        }else{
+            mod = await Module.findOne({
+                where:{
+                    creatorId: data.repo.creatorId,
+                    repositoryId:repo.id
+                }
+            });
+        }
+
+
+        //Interface
+        let allExistingApi = await Interface.findAll({
+            where:{
+                moduleId:mod.id,
+                url:data.interfaceObj.url
+            }
+        });
+
+        console.log('all existing api',allExistingApi.length);
+
+        if(allExistingApi == null || allExistingApi.length === 0){
+            interf = await Interface.create(genExampleInterface(Object.assign({
+                name:this.transformApiName(data.interfaceObj),
+                creatorId: mod.creatorId,
+                moduleId: mod.id,
+                repositoryId: mod.repositoryId
+            },data.interfaceObj)));
+            console.log('created new interface',interf);
+            //Create
+        }else{
+            /*
+             Destroy if it's matched
+             */
+            let isMatched = false;
+            for(let i=0;i<allExistingApi.length;i++){
+                interf = allExistingApi[i];
+                // Property.findAll();
+            }
+        }
+        /*
+         Found, see there is match as:
+         Has same parameters list
+         Has same parameter and value pair
+         */
+        console.log('creating property...')
+        const tmpParams = data.interfaceObj.params;
+        for (const key of Object.keys(tmpParams)) {
+            console.log(key, tmpParams[key]);
+            if(key !== '_' && key !== '__nativeApp'&& key !== '__respType'&& key !== '__platform'){
+                await Property.create({
+                    scope: 'request',
+                    name: key,
+                    type: 'String',
+                    rule: '',
+                    value: tmpParams[key],
+                    description: '',
+                    parentId: -1,
+                    creatorId: data.repo.creatorId,
+                    interfaceId: interf.id,
+                    moduleId: mod.id,
+                    repositoryId: repo.id,
+                });
+            }
+        }
+    }
+}
