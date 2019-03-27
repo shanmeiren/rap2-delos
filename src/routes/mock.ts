@@ -1,5 +1,5 @@
-import router from './router'
-import { Repository, Interface, Property } from '../models'
+﻿import router from './router'
+import { Repository, Interface, Property, ResponseBody } from '../models'
 import { QueryInclude } from '../models';
 import Tree from './utils/tree'
 import urlUtils from './utils/url'
@@ -110,12 +110,12 @@ const REG_URL_METHOD = /^\/?(get|post|delete|put)/i
 // X DONE 2.2 支持 GET POST PUT DELETE 请求
 // DONE 2.2 忽略请求地址中的前缀斜杠
 // DONE 2.3 支持所有类型的请求，这样从浏览器中发送跨越请求时不需要修改 method
-router.all('/app/mock/:repositoryId(\\d+)/:url(.+)', async (ctx) => {
+router.all('/app/mock/:repositoryName/:url(.+)', async (ctx) => {
   let app: any = ctx.app
   app.counter.mock++
-  let { repositoryId, url } = ctx.params
+  let { repositoryName, url } = ctx.params
   let method = ctx.request.method
-  repositoryId = +repositoryId
+  // repositoryId = +repositoryId
   if (REG_URL_METHOD.test(url)) {
     REG_URL_METHOD.lastIndex = -1
     method = REG_URL_METHOD.exec(url)[1].toUpperCase()
@@ -124,6 +124,8 @@ router.all('/app/mock/:repositoryId(\\d+)/:url(.+)', async (ctx) => {
   }
 
   let urlWithoutPrefixSlash = /(\/)?(.*)/.exec(url)[2]
+  if(urlWithoutPrefixSlash.indexOf(';jsessionid')> -1)
+    urlWithoutPrefixSlash = urlWithoutPrefixSlash.substr(0,urlWithoutPrefixSlash.indexOf(";jsessionid"));
   // let urlWithoutSearch
   // try {
   // let urlParts = new URL(url)
@@ -135,20 +137,31 @@ router.all('/app/mock/:repositoryId(\\d+)/:url(.+)', async (ctx) => {
   // KISSY 1.3.2 会把路径中的 // 替换为 /。在浏览器端拦截跨域请求时，需要 encodeURIComponent(url) 以防止 http:// 被替换为 http:/。但是同时也会把参数一起编码，导致 route 的 url 部分包含了参数。
   // 所以这里重新解析一遍！！！
 
-  let repository = await Repository.findById(repositoryId)
+  let repository = await Repository.findOne({
+    where: {
+      name: repositoryName
+    }
+  })
+  if(!repository) {
+    ctx.body = {isOk: false, errMsg: 'No matched repository'}
+    return;
+  }
+  let repositoryId = repository.id;
   let collaborators: Repository[] = (await repository.$get('collaborators')) as Repository[]
+  // name: [repositoryName, ...collaborators.map(item => item.id)],
   let itf
-
-  const matchedItfList = await Interface.findAll({
+  let mockWhere ={
     attributes,
     where: {
-      repositoryId: [repositoryId, ...collaborators.map(item => item.id)],
+      repositoryId,
       method,
       url: {
         [Op.like]: `%${urlWithoutPrefixSlash}%`,
       }
     }
-  })
+  }
+  console.log('mock where',mockWhere)
+  const matchedItfList = await Interface.findAll(mockWhere)
 
   if (matchedItfList) {
     for (const item of matchedItfList) {
@@ -163,8 +176,11 @@ router.all('/app/mock/:repositoryId(\\d+)/:url(.+)', async (ctx) => {
     }
   }
 
+  console.log('matchedItfList',matchedItfList.length);
+
   if (!itf) {
     // try RESTFul API search...
+
     let list = await Interface.findAll({
       attributes: ['id', 'url', 'method'],
       where: {
@@ -192,6 +208,26 @@ router.all('/app/mock/:repositoryId(\\d+)/:url(.+)', async (ctx) => {
   }
 
   let interfaceId = itf.id
+
+  //Get raw response if never edit
+  if(itf.rawResp){
+    let rawResponse = await ResponseBody.findOne({
+      where:{
+        interfaceId
+      }
+    })
+    if(rawResponse) {
+      let _body = rawResponse.body;
+      if(_body){
+        console.log('_body',_body);
+        _body.replace(/\\/g,'');
+      }
+      ctx.body = JSON.stringify(_body, undefined, 2)
+    }else
+      ctx.body = { isOk: false, errMsg: 'No matched raw response' }
+    return;
+  }
+
   let properties = await Property.findAll({
     attributes,
     where: { interfaceId, scope: 'response' },

@@ -1,4 +1,4 @@
-import { mock } from 'mockjs'
+﻿import { mock } from 'mockjs'
 
 const scopes = ['request', 'response']
 const methods = ['GET', 'POST', 'PUT', 'DELETE']
@@ -11,12 +11,13 @@ let REPOSITORY_ID = 1
 let MODULE_ID = 1
 let INTERFACE_ID = 1
 let PROPERTY_ID = 1
+let RESPONSEBODY_ID = 1
 
 export const  BO_ADMIN =  { id: USER_ID++, fullname: 'admin', email: 'admin@rap2.com', password: 'admin' }
 
-export const BO_MOZHI = { id: USER_ID++, fullname: '墨智', email: 'mozhi@rap2.com', password: 'mozhi' }
+export const BO_MOZHI = { id: USER_ID++, fullname: 'Tony', email: 'tony@yan.com', password: '5d76d3e7894e1e434f9fa84cb8682471' }
 
-export const BO_USER_COUNT = 10
+export const BO_USER_COUNT = 2
 
 export const BO_USER_FN = () => mock({
   id: USER_ID++,
@@ -41,7 +42,7 @@ export const BO_ORGANIZATION_FN = (source: any) => {
     source,
   )
 }
-export const BO_REPOSITORY_COUNT = 3
+export const BO_REPOSITORY_COUNT = 1
 
 export const BO_REPOSITORY_FN = (source: any) => {
   return Object.assign(
@@ -55,7 +56,7 @@ export const BO_REPOSITORY_FN = (source: any) => {
   )
 }
 
-export const BO_MODULE_COUNT = 3
+export const BO_MODULE_COUNT = 1
 export const BO_MODULE_FN = (source: any) => {
   return Object.assign(
     mock({
@@ -68,7 +69,7 @@ export const BO_MODULE_FN = (source: any) => {
     source,
   )
 }
-export const BO_INTERFACE_COUNT = 3
+export const BO_INTERFACE_COUNT = 1
 export const BO_INTERFACE_FN = (source: any) => {
   return Object.assign(
     mock({
@@ -102,4 +103,14 @@ export const BO_PROPERTY_FN = (source: any) => {
     }),
     source,
   )
+}
+export const BO_RESPONSEBODY_FN = (source: any) => {
+    return Object.assign(
+        mock({
+            id: RESPONSEBODY_ID,
+            body: `${RESPONSEBODY_ID++}@word(6)`,
+            interfaceId: undefined
+        }),
+        source,
+    )
 }

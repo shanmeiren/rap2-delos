@@ -1,7 +1,7 @@
-import sequelize from '../../models/sequelize'
-import { User, Organization, Repository, Module, Interface, Property, Room } from '../../models/index'
+﻿import sequelize from '../../models/sequelize'
+import { User, Organization, Repository, Module, Interface, Property, Room, res,ResponseBody } from '../../models/index'
 import { BO_ADMIN, BO_MOZHI } from './bo'
-import { BO_USER_FN, BO_ORGANIZATION_FN, BO_REPOSITORY_FN, BO_MODULE_FN, BO_INTERFACE_FN, BO_PROPERTY_FN } from './bo'
+import { BO_USER_FN, BO_ORGANIZATION_FN, BO_REPOSITORY_FN, BO_MODULE_FN, BO_INTERFACE_FN, BO_PROPERTY_FN, BO_RESPONSEBODY_FN} from './bo'
 import { BO_USER_COUNT, BO_ORGANIZATION_COUNT, BO_REPOSITORY_COUNT, BO_MODULE_COUNT, BO_INTERFACE_COUNT, BO_PROPERTY_COUNT } from './bo'
 
 const EMPTY_WHERE = { where: {} }
@@ -19,25 +19,25 @@ export async function init () {
   await Module.destroy(EMPTY_WHERE)
   await Interface.destroy(EMPTY_WHERE)
   await Property.destroy(EMPTY_WHERE)
-
+  await ResponseBody.destroy(EMPTY_WHERE)
 
   // 用户
   await User.create(BO_ADMIN)
   await User.create(BO_MOZHI)
-  for (let i = 0; i < BO_USER_COUNT; i++) {
-    await User.create(BO_USER_FN())
-  }
+  // for (let i = 0; i < BO_USER_COUNT; i++) {
+  //   await User.create(BO_USER_FN())
+  // }
 
   let users = await User.findAll()
 
   // 用户 admin 仓库
-  for (let BO_REPOSITORY_INDEX = 0; BO_REPOSITORY_INDEX < BO_REPOSITORY_COUNT; BO_REPOSITORY_INDEX++) {
-    let repository = await Repository.create(
-      BO_REPOSITORY_FN({ creatorId: BO_ADMIN.id, ownerId: BO_ADMIN.id }),
-    )
-    await repository.$set('members', users.filter(user => user.id !== BO_ADMIN.id))
-    await initRepository(repository)
-  }
+  // for (let BO_REPOSITORY_INDEX = 0; BO_REPOSITORY_INDEX < BO_REPOSITORY_COUNT; BO_REPOSITORY_INDEX++) {
+  //   let repository = await Repository.create(
+  //     BO_REPOSITORY_FN({ creatorId: BO_ADMIN.id, ownerId: BO_ADMIN.id }),
+  //   )
+  //   await repository.$set('members', users.filter(user => user.id !== BO_ADMIN.id))
+  //   await initRepository(repository)
+  // }
 
   // 用户 mozhi 的仓库
   for (let BO_REPOSITORY_INDEX = 0; BO_REPOSITORY_INDEX < BO_REPOSITORY_COUNT; BO_REPOSITORY_INDEX++) {
@@ -89,6 +89,10 @@ async function initRepository (repository: any) {
         )
         await itf.$add('properties', prop)
       }
+      //Auto response
+        await ResponseBody.create(
+            BO_RESPONSEBODY_FN({ interfaceId: itf.id })
+        )
     }
   }
 }

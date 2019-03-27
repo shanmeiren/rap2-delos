@@ -1,4 +1,4 @@
-import { Module, Interface, Property } from '../../models'
+﻿import { Module, Interface, Property } from '../../models'
 import { Repository } from '../../models'
 import {CONSTANTS} from '../../constant';
 console.log('xx',CONSTANTS);
@@ -13,6 +13,8 @@ const genExampleInterface = (extra: any) => Object.assign({
   url: `/example/${Date.now()}`,
   method: 'GET',
   description: CONSTANTS.DEFAULT_INTERFACE_DESC,
+  contentType:'F',
+  reqBody: undefined,
   creatorId: undefined,
   lockerId: undefined,
   moduleId: undefined,

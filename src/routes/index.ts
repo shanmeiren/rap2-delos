@@ -8,6 +8,6 @@ require('./mock')
 require('./analytics')
 require('./foreign')
 require('./postman')
-// require('./record')
+require('./record')
 
 export default router

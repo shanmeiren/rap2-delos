@@ -1,4 +1,4 @@
-import { Table, Column, Model, HasMany, AutoIncrement, PrimaryKey, AllowNull, DataType, Default, BelongsTo, ForeignKey, BeforeBulkDelete, BeforeBulkCreate, BeforeBulkUpdate, BeforeCreate, BeforeUpdate, BeforeDelete } from 'sequelize-typescript'
+﻿import { Table, Column, Model, HasMany, AutoIncrement, PrimaryKey, AllowNull, DataType, Default, BelongsTo, ForeignKey, BeforeBulkDelete, BeforeBulkCreate, BeforeBulkUpdate, BeforeCreate, BeforeUpdate, BeforeDelete } from 'sequelize-typescript'
 import { User, Module, Repository, Property } from '../';
 import RedisService, { CACHE_KEY } from '../../service/redis'
 import * as Sequelize from 'sequelize'
@@ -72,6 +72,16 @@ export default class Interface extends Model<Interface> {
   @Default(200)
   @Column
   status: number
+
+  @Column(DataType.STRING(3))
+  contentType: string
+
+  @Default(true)
+  @Column(DataType.BOOLEAN)
+  rawResp: boolean
+
+  @Column(DataType.TEXT)
+  reqBody: string
 
   @ForeignKey(() => User)
   @Column

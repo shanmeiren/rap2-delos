@@ -1,9 +1,9 @@
-import router from './router'
+﻿import router from './router'
 import * as k2c from 'koa2-connect'
 import * as httpProxy from 'http-proxy-middleware'
 import * as queryString from 'query-string'
-import { User, Organization, Repository, Module, Interface, Property, QueryInclude, Logger } from '../models'
-const { initRepository, initModule,genExampleModule, genExampleInterface} = require('./utils/helper')
+import { Repository, Module, Interface, Property, ResponseBody } from '../models'
+const { genExampleModule, genExampleInterface} = require('./utils/helper')
 const proxyConfig:any={
     target: 'https://www.sde4-c.uk.hsbcnet.com', // target host
     changeOrigin: true, // needed for virtual hosted sites
@@ -21,6 +21,7 @@ const proxyConfig:any={
 
         res.end =(...endArgs:[])=>{
             //Append original headers
+            console.log('originalHeaders',originalHeaders)
             Object.keys(originalHeaders).forEach((key)=>{
                if(key.indexOf('encoding') ===-1 && key.indexOf('connection') === -1){
                    res.setHeader(key, originalHeaders[key]);
@@ -135,7 +136,7 @@ class SqlUtils{
         repo = await Repository.findOne({
             where: {name: data.repo.name, creatorId: data.repo.creatorId}
         });
-        console.log('repo from db',repo);
+        console.log('repo from db');
 
         if(repo == null){
             //create a new one
@@ -159,6 +160,7 @@ class SqlUtils{
         let allExistingApi = await Interface.findAll({
             where:{
                 moduleId:mod.id,
+                method:data.interfaceObj.method,
                 url:data.interfaceObj.url
             }
         });
@@ -168,27 +170,34 @@ class SqlUtils{
         if(allExistingApi == null || allExistingApi.length === 0){
             interf = await Interface.create(genExampleInterface(Object.assign({
                 name:this.transformApiName(data.interfaceObj),
+                method:data.interfaceObj.method,
+                reqBody:data.interfaceObj.reqBody,
                 creatorId: mod.creatorId,
                 moduleId: mod.id,
                 repositoryId: mod.repositoryId
             },data.interfaceObj)));
             console.log('created new interface',interf);
+            //Save raw response into responseBodes table
+            let respoBodyRec = await ResponseBody.create({
+                body:data.interfaceObj.resp,
+                interfaceId: interf.id,
+            });
+            console.log('created new raw response');
             //Create
         }else{
-            /*
-             Destroy if it's matched
-             */
             let isMatched = false;
             for(let i=0;i<allExistingApi.length;i++){
                 interf = allExistingApi[i];
-                // Property.findAll();
-            }
-        }
+                //Checking there is same
         /*
          Found, see there is match as:
          Has same parameters list
          Has same parameter and value pair
          */
+                // Property.findAll();
+            }
+        }
+
         console.log('creating property...')
         const tmpParams = data.interfaceObj.params;
         for (const key of Object.keys(tmpParams)) {
