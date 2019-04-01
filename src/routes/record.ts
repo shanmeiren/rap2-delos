@@ -2,6 +2,9 @@
 import * as k2c from 'koa2-connect'
 import * as httpProxy from 'http-proxy-middleware'
 import * as queryString from 'query-string'
+import * as cheerio from 'cheerio'
+import * as request from 'request'
+const _request = request.defaults({jar:true});
 import { Repository, Module, Interface, Property, ResponseBody } from '../models'
 const { genExampleModule, genExampleInterface} = require('./utils/helper')
 const proxyConfig:any={
@@ -87,6 +90,32 @@ const proxyConfig:any={
         return path.replace(/\/record\/(.*)\/(uims|dtc)\/(.*)/,'/$2/$3')
     }
 }
+router.post('/record/loginhsbcnet', async (ctx, next) => {
+    let cam10Res = await cam10(cam10Options(ctx));
+    // ctx.body = cam10Res;
+    if(cam10Res && cam10Res.message){
+        ctx.body = cam10Res;
+        return;
+    }
+    let cam30Res = await cam30(cam10Res);
+    if(cam30Res && cam30Res.message){
+        ctx.body = cam30Res;
+        return;
+    }
+    if(cam30Res.data){
+        let setCookies = cam30Res.data.cookies;
+        setCookies && Object.keys(setCookies).map(k=>{
+            ctx.cookies.set(k,setCookies[k],{
+                path: '/',
+                maxAge: 60 * 60 * 1000,
+                httpOnly: false
+            });
+        })
+        ctx.body = cam30Res.data.user;
+    }else{
+        ctx.body= {message:'access landing failed'}
+    }
+})
 router.all('/record/:dataset/:url(.+)', async (ctx, next) => {
     ctx.respond = false
     let creatorId = ctx.session.id;
@@ -119,6 +148,124 @@ function transformApiName(req){
         return req.params['resourceName'];
     }
     return req.url;
+}
+
+function doRequest(opts){
+    console.log('req opts',opts);
+    return new Promise(function (resolve, reject) {
+        _request(opts, function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+                let {_headers} = response.req;
+                resolve({
+                    response,
+                    body
+                });
+            } else {
+                reject({
+                    error,
+                    response
+                });
+            }
+        });
+    });
+}
+
+function cam10Options(ctx){
+    let reqForm = ctx.request.body;
+    reqForm ={
+        env:'4',
+        username:'SDE4MXSA11',
+        memanswer:'testing1',
+        password:'fstffssl'
+    };
+    let headers = {
+        'Content-Type':'application/x-www-form-urlencoded',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.80 Safari/537.36',
+    };
+    return {
+        url: `https://www.sde${reqForm.env}-c.uk.hsbcnet.com/uims/portal/IDV_CAM10_AUTHENTICATION`,
+        method: 'POST',
+        headers: headers,
+        followAllRedirects:true,
+        form: {
+            userid:reqForm.username,
+            idv_cmd:'idv.Authentication',
+            nextPage:'HSBCnet/Landing'
+        },
+        reqForm
+    }
+}
+
+async function cam10(opts){
+    let resp;
+    let headers = {
+        'Content-Type':'application/x-www-form-urlencoded',
+        'cookie':'SkipWSAPromotional=true',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.80 Safari/537.36',
+    };
+    let {reqForm} = opts;
+    try{
+        resp = await doRequest(opts);
+    }catch(err){
+        console.log('cam10-err',err);
+        return {message:'cam10-network'};
+    }
+    let $ = cheerio.load(resp.body);
+    let passDig =$('#passwordCharacters').val();
+    if(passDig && passDig.indexOf(',') > -1){
+        let pswArray = passDig.split(',');
+        let {password} = reqForm;
+        let pid = $('input[name=".pid"]').val();
+        $('#FIRSTCHAR').val(password.charAt(pswArray[0]-1));
+        $('#SECONDCHAR').val(password.charAt(pswArray[1]-1));
+        $('#THIRDCHAR').val(password.charAt(pswArray[2]-1));
+        $('#memorableAnswer').val('testing1');
+        $('#password').val(password.charAt(pswArray[0]-1)+password.charAt(pswArray[1]-1)+password.charAt(pswArray[2]-1));
+        let cam30Form = $(`#P_${pid}cam10To30Form`).serialize();
+        return {
+            url: `https://www.sde${reqForm.env}-c.uk.hsbcnet.com${$(`#P_${pid}cam10To30Form`).attr('action')}`,
+            method: 'POST',
+            headers,
+            followAllRedirects:true,
+            form: queryString.parse(cam30Form)
+        };
+    }else{
+        return {message:'cam10-uncaught'};
+    }
+}
+
+async function cam30(opts){
+    let resp;
+    try{
+        resp = await doRequest(opts);
+    }catch(err){
+        console.log('err-cam30',err);
+        return {message:'cam30-network'};
+    }
+    if(resp.body.indexOf('logoffURL') > -1 || resp.body.indexOf('.pp=HSBCnet/Landing') > -1){
+        let respCookiesStr = resp.response.headers['set-cookie'].map(function (c) { return c.substr(0,c.indexOf(';')) });
+        let reqCookiesStr = resp.response.req._headers.cookie.split(';');
+        let respCookies={},reqCookies={};
+        respCookiesStr.forEach(p=>{
+            p = p.split(/\s*=\s*/);
+            respCookies[p[0].trim()] = p.splice(1).join('=');
+        })
+        reqCookiesStr.forEach(p=>{
+            p = p.split(/\s*=\s*/);
+            reqCookies[p[0].trim()] = p.splice(1).join('=');
+        })
+
+        return {
+            data:{
+                cookies: Object.assign(reqCookies,respCookies),
+                user:{
+                    jsid: resp.response.req.path.substr(resp.response.req.path.indexOf('=')+1),
+                    token:reqCookiesStr['CamToken']
+                }
+            }};
+    }else{
+        return {message:'cam30-uncaught'};
+    }
 }
 
 class SqlUtils{
